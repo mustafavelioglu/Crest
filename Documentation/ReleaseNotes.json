@@ -4361,6 +4361,10 @@
     "sidebar-shift-click-selects-range": {
       "category": "fixed",
       "message": "Shift-clicking a tab in the sidebar selects every tab between the active tab and the one you clicked, instead of only adding that tab like Command-click."
+    },
+    "tab-navigation-history-sync": {
+      "category": "new",
+      "message": "Continue a tab’s Back and Forward history on another device, including tabs reopened from Archive. Tabs already in use keep their own navigation session."
     }
   }
 }

@@ -408,7 +408,8 @@ internal sealed class Pages(Device device, Engines engines, IClock clock, IIdSou
         if (!histories.TryGetValue(key, out var kept)) return null;
         ForgetHistory(key);
         var tab = space.Tabs.FirstOrDefault(tab => tab.Id == tabId);
-        return kept.SpaceId == space.Id && kept.History.Shown is { } shown && tab?.Url is { } url
+        var url = tab?.LocalNavigation?.Current.Url ?? tab?.Url;
+        return kept.SpaceId == space.Id && kept.History.Shown is { } shown && url is not null
             && new WebAddress(url).IsSamePage(new WebAddress(shown.Url))
                 ? (kept.History, kept.PageId == Guid.Empty)
                 : null;

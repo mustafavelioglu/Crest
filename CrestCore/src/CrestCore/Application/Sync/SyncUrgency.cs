@@ -16,6 +16,11 @@ internal sealed class SyncUrgency {
 
     /// Staged once edits pause: a drag or a rename.
     public static readonly SyncUrgency Coalesced = new(delay: TimeSpan.FromMilliseconds(150), durability: Durability.WriteBehind);
+    /// Portable navigation is prepared after a short pause, bounded during
+    /// continuous use. Transport delivery remains CloudKit's responsibility.
+    public static readonly SyncUrgency Navigation = new(delay: TimeSpan.FromSeconds(2), durability: Durability.WriteBehind,
+        maximumWait: TimeSpan.FromSeconds(10));
+
     /// Staged once the browser has been quiet for a while, and at the latest a
     /// few minutes after the first such edit: a tab shown or a page report,
     /// which another device need not see soon.
@@ -28,7 +33,7 @@ internal sealed class SyncUrgency {
     /// which an upload or an engine's data erasure follows.
     public static readonly SyncUrgency WithSave = new(delay: TimeSpan.Zero, durability: Durability.BeforeReturn);
 
-    public static IReadOnlyList<SyncUrgency> All { get; } = [Coalesced, Deferred, Immediate, WithSave];
+    public static IReadOnlyList<SyncUrgency> All { get; } = [Coalesced, Deferred, Immediate, WithSave, Navigation];
 
     /// How long a queued stage waits for a later edit to replace it.
     public TimeSpan Delay { get; }

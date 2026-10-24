@@ -12,6 +12,12 @@ internal sealed record PageIcon(string Url, TabIconAccent? Accent);
 /// in. The workspace's session applies each as one revision, or, while a
 /// transaction holds the session, once it ends, in the order they arrived.
 internal abstract record PageEdit(Guid PageId, Guid SpaceId, DateTimeOffset At) {
+    #region Variables
+
+    public virtual SyncStaging Staging => SyncStaging.PageReport;
+
+    #endregion
+
     #region Abstract Methods
 
     /// The Space after the edit, stamped `now`, which is `At` as the session

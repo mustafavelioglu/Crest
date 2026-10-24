@@ -1,4 +1,5 @@
 using CrestCore.Contracts;
+using CrestCore.Domain;
 
 namespace CrestCore.Application;
 
@@ -70,6 +71,10 @@ internal sealed partial class PageHistory {
 
     /// The index of the live run, or -1 before an engine reported one.
     private int live = -1;
+    private TabNavigation? publishedNavigation;
+    private IReadOnlyList<PageHistoryEntry> capturedEntries = [];
+    private int capturedCurrent = -1;
+    private bool establishesNavigationBaseline;
 
     /// The identities the page's engine holds now, in order, as it last
     /// reported them.
@@ -107,6 +112,49 @@ internal sealed partial class PageHistory {
     /// The entries the page can go forward to, nearest first. A page that
     /// shows no entry yet, as one that just moved engine, has none.
     public IReadOnlyList<PageHistoryEntry> Forward => Current < 0 ? [] : [.. Entries.Skip(Current + 1)];
+
+    #endregion
+
+    #region Actions - Continuation
+
+    /// Only actual changes publish. Restoring or repeating a native report
+    /// must not turn a received continuation into a new local revision.
+    internal TabNavigation? ChangedNavigation(out bool publishes) {
+        publishes = false;
+        var entries = Entries;
+        int current = Current;
+        if (!establishesNavigationBaseline && current == capturedCurrent && entries.SequenceEqual(capturedEntries)) return null;
+        capturedEntries = entries;
+        capturedCurrent = current;
+        var candidate = TabNavigation.Capture(entries, current);
+        if (candidate is null) {
+            // A local navigation to an unsupported address must not leave a
+            // stale portable session to reopen later.
+            publishes = current >= 0 && !establishesNavigationBaseline;
+            establishesNavigationBaseline = false;
+            publishedNavigation = null;
+            return null;
+        }
+        bool changed = publishedNavigation is null || !publishedNavigation.SamePath(candidate);
+        publishedNavigation = candidate;
+        if (establishesNavigationBaseline) {
+            establishesNavigationBaseline = false;
+            return candidate;
+        }
+        publishes = changed;
+        return changed ? candidate : null;
+    }
+
+    internal static PageHistory Continue(TabNavigation navigation, EngineKind engine) {
+        var history = new PageHistory();
+        history.runs.Add(new Run(engine) {
+            Entries = [.. navigation.Entries],
+            Current = navigation.Entries.ToList().FindIndex(entry => entry.Id == navigation.CurrentEntryId)
+        });
+        history.live = 0;
+        history.establishesNavigationBaseline = true;
+        return history;
+    }
 
     #endregion
 
@@ -406,6 +454,7 @@ internal sealed partial class PageHistory {
     /// its entry. Anywhere else, or with nothing kept, it loads the entry
     /// afresh as a run of its own.
     public void Reopen(EngineKind engine, bool restores) {
+        establishesNavigationBaseline = true;
         if (live >= 0 && runs[live].Engine == engine && restores && runs[live].Current >= 0) {
             leaving.Remove(engine);
             arriving = new Arrival(runs[live], runs[live].Entries[runs[live].Current].Id, native);

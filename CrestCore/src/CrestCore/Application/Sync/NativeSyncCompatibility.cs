@@ -41,7 +41,7 @@ internal static class NativeSyncCompatibility {
         new() { ["id"] = Identity, ["tint"] = Color });
 
     private static readonly Shape Tab = new(
-        "id spaceID title nativeContent url savedURL symbol placement folderID splitGroupID orderToken lastActivatedAt positionModifiedAt customTitle titleModifiedAt keepsPageLoaded",
+        "id spaceID title nativeContent url savedURL symbol placement folderID splitGroupID orderToken lastActivatedAt positionModifiedAt customTitle titleModifiedAt keepsPageLoaded navigation",
         new() { ["id"] = Identity, ["spaceID"] = Identity, ["folderID"] = Identity, ["splitGroupID"] = Identity });
 
     private static readonly Dictionary<string, Shape> Values = new() {

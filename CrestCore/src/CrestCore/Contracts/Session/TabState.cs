@@ -31,6 +31,18 @@ public sealed record TabState(
     bool KeepsPageLoaded) {
     #region Variables
 
+    /// The shared continuation, independent of the resident page on this device.
+    internal TabNavigation? Navigation { get; init; }
+
+    /// This device's retained session. Never projected into sync records.
+    internal TabNavigation? LocalNavigation { get; init; }
+
+    /// Retained even when a local reset removes the portable sequence.
+    internal ulong NavigationClock { get; init; }
+
+    internal ulong KnownNavigationClock => Math.Max(NavigationClock,
+        Math.Max(Navigation?.Clock ?? 0, LocalNavigation?.Clock ?? 0));
+
     /// <summary>How the tab's icon is filled: its stored mode, or for a tab written
     /// before modes were stored, or with a term this build cannot name, the one its
     /// symbol implies.</summary>

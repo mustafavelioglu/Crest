@@ -30,6 +30,7 @@ public sealed record OpenPage(Guid PageId, Guid WorkspaceId, Guid SpaceId, Guid?
         var space = pages.Hosting(workspace, SpaceId);
         pages.RequireUnowned(WorkspaceId, WindowId, TabId, moving: null);
         var tab = space.Tabs.FirstOrDefault(held => held.Id == TabId);
+        var continuation = tab?.LocalNavigation ?? (tab?.Navigation?.Matches(tab.Url) == true ? tab.Navigation : null);
         var opener = pages.Opener(OpenerPageId, WorkspaceId, space);
         var history = TabId is { } kept && opener is null ? pages.KeptHistory(WorkspaceId, space, kept) : null;
         var engine = (history?.History.Engine is { } shown ? pages.Engines.Registered(shown) : null) ?? pages.Opening(space, tab, opener)
@@ -39,7 +40,12 @@ public sealed record OpenPage(Guid PageId, Guid WorkspaceId, Guid SpaceId, Guid?
         pages.Add(page);
         var restore = TabId is { } tabId ? pages.Restorable(WorkspaceId, space, tabId, engine.Kind) : null;
         if (restore is not null) page.Restoring(restore.Url);
-        if (history is { } resumed) page.Resume(resumed.History, restores: restore is not null || resumed.Archived);
+        if (history is { } resumed) {
+            if (resumed.History.Shown is { } local && local.Url != tab?.Url && restore is null)
+                page.Continue(resumed.History, local.Url);
+            else page.Resume(resumed.History, restores: restore is not null || resumed.Archived);
+        } else if (!workspace.IsPrivateBrowsing && opener is null && continuation is { } navigation)
+            page.Continue(PageHistory.Continue(navigation, engine.Kind), navigation.Current.Url);
         turn.Changes.Publish(new PageOpened(page.State));
         turn.Issue(engine, new CreatePage(page.Id, page.ProfileId, workspace.IsPrivateBrowsing, page.WindowId, restore));
     }

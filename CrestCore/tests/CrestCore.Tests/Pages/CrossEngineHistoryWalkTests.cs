@@ -388,7 +388,7 @@ public sealed partial class BrowserContractsTests {
         /// A truncated archive, and ones no engine could have written: an
         /// entry without a title, and a run that ends before it starts.
         [Fact]
-        public void AnArchiveThisBuildCannotReadBringsNothingBack() {
+        public void AnUnreadableEngineArchiveFallsBackToTheTabsPortableHistory() {
             static byte[] Edited(byte[] archive, Action<JsonNode> edit) {
                 var root = JsonNode.Parse(archive)!;
                 edit(root);
@@ -413,9 +413,9 @@ public sealed partial class BrowserContractsTests {
                 Send(browser, new RestoreTabHistory(browser.Workspace, browser.Space, browser.Tab, spoil(archive)));
                 browser.Page = Guid.NewGuid();
                 Send(browser, new OpenPage(browser.Page, browser.Workspace, browser.Space, browser.Tab, browser.Window));
-                browser.Navigate(browser.Hosting, browser.Page, Address("b"));
+                // The portable continuation starts its own initial load.
                 browser.Settle();
-                Expect(browser, EngineKind.Chromium, "b", [], []);
+                Expect(browser, EngineKind.Chromium, "b", ["a", "start"], []);
             }
         }
 

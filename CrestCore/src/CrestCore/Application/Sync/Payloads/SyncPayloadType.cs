@@ -204,6 +204,13 @@ internal abstract class SyncPayloadType {
                 result["splitGroupID"] ??= (first["splitGroupID"] ?? second["splitGroupID"])?.DeepClone();
             }
             LatestFields(result, first, second, "titleModifiedAt", "customTitle");
+            var a = TabNavigation.Decode(first["navigation"], first["url"]?.GetValue<string>());
+            var b = TabNavigation.Decode(second["navigation"], second["url"]?.GetValue<string>());
+            // Legacy records compete by the ordinary record clock. Two
+            // navigation-aware copies resolve their URL and path together.
+            if (a is not null && b is not null) {
+                Copy(result, a.CompareTo(b) >= 0 ? first : second, "url", "title", "navigation");
+            }
         }
 
         public override SyncDeletionReason? DeletionReason(JsonObject value, ArchiveReason? archiveReason, bool owningSpaceRemains,

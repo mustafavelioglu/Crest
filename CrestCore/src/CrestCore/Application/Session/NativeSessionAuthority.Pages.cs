@@ -4,6 +4,12 @@ using CrestCore.Domain;
 namespace CrestCore.Application;
 
 public sealed partial class NativeSessionAuthority {
+    #region Variables
+
+    internal Guid NavigationDeviceId => sync?.Snapshot.DeviceId ?? workspaceId;
+
+    #endregion
+
     #region Actions - Page edits
 
     /// Applies what a page's engine reported to the Space the page lives in,
@@ -21,7 +27,7 @@ public sealed partial class NativeSessionAuthority {
             workspace = workspaceId;
         }
         if (applied is not { } result) return [];
-        QueueStage(result.Previous, result.Next, SyncStaging.PageReport);
+        QueueStage(result.Previous, result.Next, edit.Staging);
         return [.. SessionChanges.Publish(workspace, result.Previous, result.Next), .. result.Events.Changes(workspace),
             .. edit.Announced(workspace)];
     }

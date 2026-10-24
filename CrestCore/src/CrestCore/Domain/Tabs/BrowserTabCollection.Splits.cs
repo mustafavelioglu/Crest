@@ -13,6 +13,8 @@ public sealed partial class BrowserTabCollection {
 
     private BrowserTab CopyTab(BrowserTab source, Guid id, DateTimeOffset now) => BrowserTab.Restore(source.State with {
         Id = id,
+        Url = source.State.LocalNavigation?.Current.Url ?? source.Url,
+        Navigation = source.State.LocalNavigation ?? source.State.Navigation,
         Placement = TabPlacement.Current,
         FolderId = null,
         SplitGroupId = null,

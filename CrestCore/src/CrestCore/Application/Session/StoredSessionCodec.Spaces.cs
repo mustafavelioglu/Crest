@@ -44,7 +44,9 @@ internal static partial class StoredSessionCodec {
             [.. Items(value[Key.History]).Select(DecodeHistoryEntry)]);
     }
 
-    internal static JsonObject Encode(SpaceState space) {
+    internal static JsonObject Encode(SpaceState space) => Encode(space, null, null);
+
+    private static JsonObject Encode(SpaceState space, TabNavigation.Budget? shared, TabNavigation.Budget? local) {
         var settings = space.Settings;
         var value = new JsonObject {
             [Key.Id] = WrappedIdentity(space.Id),
@@ -55,9 +57,9 @@ internal static partial class StoredSessionCodec {
         };
         if (settings.Branding is { } branding) value[Key.Branding] = Encode(branding);
         value[Key.Folders] = EncodeAll(space.Folders, Encode);
-        value[Key.Tabs] = EncodeAll(space.Tabs, Encode);
+        value[Key.Tabs] = EncodeAll(space.Tabs, tab => Encode(tab, shared, local));
         value[Key.SplitGroups] = EncodeAll(space.SplitGroups, Encode);
-        value[Key.ArchivedTabs] = EncodeAll(space.ArchivedTabs, Encode);
+        value[Key.ArchivedTabs] = EncodeAll(space.ArchivedTabs, tab => Encode(tab, shared, local));
         value[Key.History] = EncodeHistory(space.History);
         value[Key.BrowsingPreferences] = Encode(settings.BrowsingPreferences);
         value[Key.CredentialPreferences] = Encode(settings.CredentialPreferences);
@@ -97,7 +99,9 @@ internal static partial class StoredSessionCodec {
     }
 
     internal static JsonObject Encode(SessionState session) {
-        var value = new JsonObject { [Key.Spaces] = EncodeAll(session.Spaces, Encode) };
+        var shared = new TabNavigation.Budget();
+        var local = new TabNavigation.Budget();
+        var value = new JsonObject { [Key.Spaces] = EncodeAll(session.Spaces, space => Encode(space, shared, local)) };
         if (session.DefaultSpaceId is { } defaultSpace) value[Key.DefaultSpaceId] = WrappedIdentity(defaultSpace);
         if (session.DisposableSeedMarker is { } marker) value[Key.DisposableSeedMarker] = BareIdentity(marker);
         if (session.SpaceDeletions.Count > 0) value[Key.SpaceDeletions] = EncodeAll(session.SpaceDeletions, Encode);

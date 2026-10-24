@@ -315,8 +315,16 @@ internal sealed class Page {
     /// shows it heading there at once, so its owner does not load it anew.
     public void Restoring(string url) => shown = shown with { PendingUrl = url };
 
-    /// The page takes on the history its tab's last page held, restoring
-    /// that page's engine's history when `restores`.
+    /// Loads the selected entry of a continuation once the engine creates
+    /// the page, preventing a second initial load from the platform.
+    internal void Continue(PageHistory history, string url) {
+        Resume(history, restores: false);
+        Restoring(url);
+        rehostedAddress = url;
+        rehostedEntry = null;
+    }
+
+    /// Takes on retained history, restoring the engine's own when available.
     public void Resume(PageHistory history, bool restores) {
         History = history;
         history.Reopen(Engine.Kind, restores);

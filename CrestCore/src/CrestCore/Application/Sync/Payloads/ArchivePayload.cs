@@ -16,8 +16,8 @@ internal sealed record ArchivePayload(TabPayload Tab, SyncTime ArchivedAt, Archi
 
     public override Guid SpaceId => Tab.SpaceId;
 
-    /// Clients before native views synced cannot show an archived one.
-    public override int Schema => Tab.NativeContent is not null ? 3 : 1;
+    /// Archived navigation requires schema 4; native views require schema 3.
+    public override int Schema => Tab.Navigation is not null ? 4 : Tab.NativeContent is not null ? 3 : 1;
 
     #endregion
 

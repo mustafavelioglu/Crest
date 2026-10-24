@@ -126,7 +126,7 @@ public static class NativeSyncMaterializer {
         !archived && remote.Placement.IsDurable ? remote.SavedUrl?.Spelled ?? remote.SavedUrl?.Text ?? remote.Url?.Spelled ?? remote.Url?.Text : null,
         remote.Symbol, local?.FaviconUrl, local?.IconAccent, local?.StoredIconMode, archived ? TabPlacement.Current : remote.Placement,
         null, archived ? null : remote.SplitGroupId, remote.LastActivatedAt.Moment, remote.PositionModifiedAt?.Moment,
-        remote.CustomTitle, remote.TitleModifiedAt?.Moment, remote.KeepsPageLoaded);
+        remote.CustomTitle, remote.TitleModifiedAt?.Moment, remote.KeepsPageLoaded) { Navigation = remote.Navigation, LocalNavigation = local?.LocalNavigation, NavigationClock = local?.NavigationClock ?? 0 };
 
     private static List<TabState> Tabs(Guid space, IReadOnlyList<SyncSessionRecord> records, SyncPreferences policy, SpaceState? local,
         IReadOnlyList<FolderState> folders, IReadOnlyDictionary<Guid, Guid> owners, HashSet<Guid> deleted) {

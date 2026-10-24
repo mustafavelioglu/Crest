@@ -139,7 +139,7 @@ public static class NativeSyncProjection {
     }
 
     private static JsonObject Tab(JsonNode source, JsonNode spaceId, string token, bool archived) {
-        var value = Fields(source, "id", "title", "url", "symbol", "lastActivatedAt", "positionModifiedAt", "customTitle", "titleModifiedAt", "keepsPageLoaded");
+        var value = Fields(source, "id", "title", "url", "symbol", "lastActivatedAt", "positionModifiedAt", "customTitle", "titleModifiedAt", "keepsPageLoaded", "navigation");
         value["spaceID"] = spaceId.DeepClone(); value["orderToken"] = token;
         Spell(value, "url");
         value["placement"] = archived ? JsonValue.Create(TabPlacement.Current.Name) : source["placement"]!.DeepClone();

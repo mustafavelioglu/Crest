@@ -24,7 +24,8 @@ internal sealed record TabPayload(
     SyncTime? PositionModifiedAt,
     string? CustomTitle,
     SyncTime? TitleModifiedAt,
-    bool KeepsPageLoaded) : SyncPayload {
+    bool KeepsPageLoaded,
+    TabNavigation? Navigation = null) : SyncPayload {
     #region Static Variables
 
     private const int MaximumTitleBytes = 2_048;
@@ -44,10 +45,10 @@ internal sealed record TabPayload(
     public override Guid SpaceId { get; } = SpaceId;
     public override SyncRecordKind Kind => SyncRecordKind.Tab;
 
-    /// Clients before native views synced cannot show one, so a native tab
-    /// needs schema 3; clients before open folders synced cannot place a
-    /// current tab in a folder, so one needs schema 2.
-    public override int Schema => NativeContent is not null ? 3 : !Placement.IsDurable && FolderId is not null ? 2 : 1;
+    /// Navigation needs schema 4: older clients preserve unknown fields while
+    /// changing URLs and could otherwise carry a stale path. Native views need
+    /// schema 3 and current folders schema 2.
+    public override int Schema => Navigation is not null ? 4 : NativeContent is not null ? 3 : !Placement.IsDurable && FolderId is not null ? 2 : 1;
 
     #endregion
 
@@ -63,7 +64,8 @@ internal sealed record TabPayload(
         value.Text("symbol"), value.Named("placement", TabPlacement.Named),
         value.OptionalWrappedIdentity("folderID"), value.OptionalWrappedIdentity("splitGroupID"), value.Text("orderToken"),
         value.Time("lastActivatedAt"), value.OptionalTime("positionModifiedAt"), value.OptionalText("customTitle"),
-        value.OptionalTime("titleModifiedAt"), value.OptionalFlag("keepsPageLoaded") ?? false);
+        value.OptionalTime("titleModifiedAt"), value.OptionalFlag("keepsPageLoaded") ?? false,
+        TabNavigation.Decode(value.Value["navigation"], value.OptionalText("url")));
 
     public override JsonObject EncodeValue(SyncPayloadForm form) {
         var value = new JsonObject {
@@ -88,6 +90,7 @@ internal sealed record TabPayload(
         Put(value, "customTitle", CustomTitle);
         Put(value, "titleModifiedAt", TitleModifiedAt, form);
         value["keepsPageLoaded"] = KeepsPageLoaded;
+        if (Navigation is { } navigation && navigation.Matches(Url?.Spelled ?? Url?.Text)) value["navigation"] = navigation.Encode();
         return value;
     }
 

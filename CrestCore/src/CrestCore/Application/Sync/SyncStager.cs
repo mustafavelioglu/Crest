@@ -27,7 +27,7 @@ internal sealed class SyncStager {
     /// requests. `Delay` is the shortest delay among the edits it covers and
     /// `Since` when the first of them was queued.
     internal sealed record Request(SessionState Session, SyncDeletionReason Reason, SyncRemovals Removals, DateTimeOffset Due,
-        ulong Turn, ulong Sequence, TimeSpan Delay, DateTimeOffset Since) {
+        ulong Turn, ulong Sequence, TimeSpan Delay, DateTimeOffset Since, DateTimeOffset? Deadline = null) {
         #region Actions - Supersession
 
         /// The request that covers the edits of `earlier`, which a stage
@@ -39,7 +39,8 @@ internal sealed class SyncStager {
                 Removals = earlier.Removals.Joining(later.Removals),
                 Due = earlier.Due < later.Due ? earlier.Due : later.Due,
                 Delay = earlier.Delay < later.Delay ? earlier.Delay : later.Delay,
-                Since = earlier.Since < later.Since ? earlier.Since : later.Since
+                Since = earlier.Since < later.Since ? earlier.Since : later.Since,
+                Deadline = earlier.Deadline is { } limit && (later.Deadline is null || limit < later.Deadline) ? limit : later.Deadline
             };
 
         #endregion
@@ -92,8 +93,10 @@ internal sealed class SyncStager {
             var delay = waiting is { } earlier && earlier.Delay < edit.Urgency.Delay ? earlier.Delay : edit.Urgency.Delay;
             var since = waiting?.Since ?? now;
             var due = now + delay;
-            if (edit.Urgency.MaximumWait is { } maximum && since + maximum < due) due = since + maximum;
-            queued = new(next, edit.Reason, removals, due, turns, requested, delay, since);
+            var deadline = waiting?.Deadline;
+            if (edit.Urgency.MaximumWait is { } maximum && (deadline is null || since + maximum < deadline)) deadline = since + maximum;
+            if (deadline is { } limit && limit < due) due = limit;
+            queued = new(next, edit.Reason, removals, due, turns, requested, delay, since, deadline);
             worker ??= Start();
             Monitor.PulseAll(NativeSessionAuthority.Gate);
         }

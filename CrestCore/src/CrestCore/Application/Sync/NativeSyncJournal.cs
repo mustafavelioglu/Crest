@@ -19,6 +19,7 @@ public sealed class NativeSyncJournal {
     private readonly HashSet<string> pending;
     private readonly Lazy<byte[]> encoded;
     internal IEnumerable<JsonObject> Records => records.Values;
+    internal Guid DeviceId => Id(metadata["deviceID"]);
     internal JsonNode Preferences => metadata["preferences"]!.DeepClone();
     /// How many records wait to upload.
     internal int PendingCount => pending.Count;

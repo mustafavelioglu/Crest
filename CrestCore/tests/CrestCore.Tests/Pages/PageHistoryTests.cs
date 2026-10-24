@@ -17,7 +17,7 @@ public sealed partial class BrowserContractsTests {
         PageHistoryEntry[] entries = [Entry("https://a.example/"), Entry("https://b.example/"), Entry("https://c.example/")];
 
         app.Report(engine, new PageHistoryReported(page, entries, Current: 1));
-        var live = Live(app.Drain());
+        var live = Live(app.Drain().OfType<PageChanged>().Cast<Change>().ToArray());
         Assert.Equal((true, true), (live.CanGoBack, live.CanGoForward));
         var menus = app.Query(new PageHistoryEntries(page));
         Assert.Equal([entries[0]], menus.Back);
@@ -31,7 +31,7 @@ public sealed partial class BrowserContractsTests {
 
         // The newest entry reaches back to all the others, nearest first.
         app.Report(engine, new PageHistoryReported(page, entries, Current: 2));
-        var newest = Live(app.Drain());
+        var newest = Live(app.Drain().OfType<PageChanged>().Cast<Change>().ToArray());
         Assert.Equal((true, false), (newest.CanGoBack, newest.CanGoForward));
         Assert.Equal([entries[1], entries[0]], app.Query(new PageHistoryEntries(page)).Back);
         var unknown = app.Query(new PageHistoryEntries(Guid.NewGuid()));

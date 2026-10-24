@@ -62,13 +62,18 @@ public sealed class BrowserTab {
     /// persisting both is an impossible tab. A blank title is the page saying
     /// nothing rather than clearing the name.
     public void ObserveAppearance(string? url, string? title) {
-        if (url is not null) State = State with { NativeContent = null, Url = url };
+        if (url is not null) State = State with {
+            NativeContent = null,
+            Url = url,
+            NavigationClock = State.KnownNavigationClock,
+            LocalNavigation = State.LocalNavigation?.Matches(url) == true ? State.LocalNavigation : null
+        };
         if (!string.IsNullOrEmpty(title)) State = State with { Title = title };
     }
 
     /// A closed saved tab reopens at the address it was saved with.
     public void ReturnToSavedUrl() {
-        if (SavedUrl is { } saved) State = State with { Url = saved };
+        if (SavedUrl is { } saved) State = State with { Url = saved, Navigation = null, LocalNavigation = null, NavigationClock = State.KnownNavigationClock };
     }
 
     #endregion
@@ -85,7 +90,7 @@ public sealed class BrowserTab {
 
     /// Returns the tab to the address it belongs to, which its page then
     /// loads. Refused with `NoSavedAddress` for a tab that belongs nowhere.
-    public void ReturnToSavedAddress() => State = State with { Url = RequiredSavedAddress() };
+    public void ReturnToSavedAddress() => State = State with { Url = RequiredSavedAddress(), Navigation = null, LocalNavigation = null, NavigationClock = State.KnownNavigationClock };
 
     private string RequiredSavedAddress() => State.SavedAddress ?? throw new Rejected(new NoSavedAddress(Id));
 

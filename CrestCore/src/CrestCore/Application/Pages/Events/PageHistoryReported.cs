@@ -16,6 +16,13 @@ public sealed record PageHistoryReported(Guid PageId, IReadOnlyList<PageHistoryE
         if (!PageHistory.Holds(Entries, Current)) return;
         Guid? arrival = null;
         pages.Update(page, turn.Changes, () => arrival = page.History.Report(page.Engine.Kind, Entries, Current));
+        if (page.TabId is { } tab && pages.Device.Attached(page.WorkspaceId) is { } workspace
+            && !workspace.IsPrivateBrowsing) {
+            var navigation = page.History.ChangedNavigation(out bool publishes);
+            if (navigation is not null || publishes)
+                pages.Edit(page, new NavigationHistoryRecord(page.Id, page.SpaceId, pages.Clock.Now, tab,
+                    workspace.NavigationDeviceId, navigation, publishes), turn.Changes);
+        }
         if (arrival is { } entryId) turn.Issue(page.Engine, new GoToHistoryEntry(page.Id, entryId));
     }
 

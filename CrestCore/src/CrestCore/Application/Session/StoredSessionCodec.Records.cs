@@ -33,10 +33,16 @@ internal static partial class StoredSessionCodec {
             OptionalIdentity(value[Key.FolderId]), OptionalIdentity(value[Key.SplitGroupId]),
             Date(value[Key.LastActivatedAt]), OptionalDate(value[Key.PositionModifiedAt]),
             Text(value[Key.CustomTitle]), OptionalDate(value[Key.TitleModifiedAt]),
-            Flag(value[Key.KeepsPageLoaded]) ?? false);
+            Flag(value[Key.KeepsPageLoaded]) ?? false) {
+            Navigation = TabNavigation.Decode(value["navigation"], url),
+            LocalNavigation = TabNavigation.Decode(value["localNavigation"], null, requiresMatchingUrl: false),
+            NavigationClock = value["navigationClock"] is JsonValue clock && clock.TryGetValue<ulong>(out var counter) ? counter : 0
+        };
     }
 
-    internal static JsonObject Encode(TabState tab) {
+    internal static JsonObject Encode(TabState tab) => Encode(tab, null, null);
+
+    private static JsonObject Encode(TabState tab, TabNavigation.Budget? shared, TabNavigation.Budget? local) {
         var value = new JsonObject { [Key.Id] = WrappedIdentity(tab.Id), [Key.Title] = tab.Title };
         Put(value, Key.Url, tab.Url);
         if (tab.NativeContent is { } native) {
@@ -57,6 +63,9 @@ internal static partial class StoredSessionCodec {
         Put(value, Key.CustomTitle, tab.CustomTitle);
         PutEdit(value, Key.TitleModifiedAt, tab.TitleModifiedAt);
         value[Key.KeepsPageLoaded] = tab.KeepsPageLoaded;
+        if (tab.Navigation is { } navigation && navigation.Matches(tab.Url) && (shared?.Includes(navigation) ?? true)) value["navigation"] = navigation.Encode();
+        if (tab.LocalNavigation is { } retained && (local?.Includes(retained) ?? true)) value["localNavigation"] = retained.Encode();
+        if (tab.KnownNavigationClock > 0) value["navigationClock"] = tab.KnownNavigationClock;
         return value;
     }
 
@@ -80,9 +89,11 @@ internal static partial class StoredSessionCodec {
         return new(DecodeTab(value[Key.Tab]), Date(value[Key.ArchivedAt]), reason);
     }
 
-    internal static JsonObject Encode(ArchivedTabState archived) {
+    internal static JsonObject Encode(ArchivedTabState archived) => Encode(archived, null, null);
+
+    private static JsonObject Encode(ArchivedTabState archived, TabNavigation.Budget? shared, TabNavigation.Budget? local) {
         var value = new JsonObject {
-            [Key.Tab] = Encode(archived.Tab),
+            [Key.Tab] = Encode(archived.Tab, shared, local),
             [Key.ArchivedAt] = Seconds(archived.ArchivedAt),
             [Key.Reason] = archived.Reason.StoredReason
         };

@@ -15,6 +15,16 @@ Crest synchronizes durable browser structure such as Spaces, tabs, saved folders
 
 Password values never enter CloudKit. Each Space’s separate **Sync with iCloud Keychain** switch controls its encrypted Crest Password items. Private Spaces and transient Quick Window or Peek state are not normal synced browsing state.
 
+## Continue a tab
+
+Synced tabs carry a bounded Back and Forward sequence and its current position. Large collections can omit optional sequences when the session’s navigation storage budget is reached; tab URLs and metadata still sync. A fresh session can continue that sequence on another device. Pages reached through the sequence may reload; form contents, scroll positions, and engine session state stay on their original device.
+
+A tab already loaded on a device keeps its own navigation session when another device changes the same tab. Concurrent navigation resolves to one shared continuation for fresh sessions. Renaming or rearranging a tab does not choose that continuation.
+
+Navigation history remains available with an archived tab until that archive entry is removed or expires. Clearing browsing History removes visit records and leaves tabs’ Back and Forward sequences intact. Private Spaces and transient browsing do not upload navigation history.
+
+Keep Crest updated on every device. Older versions cannot read synced tab records that carry navigation history.
+
 ## Check status
 
 The Sync page shows whether iCloud is available and whether Crest has pending records. Apple does not expose the Apple Account email to Crest, so confirm the account directly in System Settings if two devices do not meet.

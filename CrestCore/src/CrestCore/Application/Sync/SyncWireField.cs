@@ -22,6 +22,7 @@ internal sealed class SyncWireField {
     #region Static Variables
 
     public static readonly SyncWireField Id = new("id", Kinds.Identity);
+    public static readonly SyncWireField CurrentEntryId = new("currentEntryID", Kinds.Identity);
     public static readonly SyncWireField RawValue = new("rawValue", Kinds.Identity);
     public static readonly SyncWireField ProfileId = new("profileID", Kinds.Identity);
     public static readonly SyncWireField SpaceId = new("spaceID", Kinds.Identity);
@@ -45,7 +46,7 @@ internal sealed class SyncWireField {
     public static readonly SyncWireField AccessPolicyModifiedAt = new("accessPolicyModifiedAt", Kinds.Timestamp);
 
     public static IReadOnlyList<SyncWireField> All { get; } = [
-        Id, RawValue, ProfileId, SpaceId, DeviceId, FolderId, ParentId, OrderAnchorTabId, SplitGroupId, LastActivatedAt,
+        Id, CurrentEntryId, RawValue, ProfileId, SpaceId, DeviceId, FolderId, ParentId, OrderAnchorTabId, SplitGroupId, LastActivatedAt,
         PositionModifiedAt, TitleModifiedAt, SavedTabsExpansionModifiedAt, CollapseModifiedAt, IconModifiedAt, TintModifiedAt,
         ArchivedAt, DeletedAt, FirstVisitedAt, LastVisitedAt, CredentialsEnabledModifiedAt, AccessPolicyModifiedAt
     ];
